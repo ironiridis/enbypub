@@ -97,13 +97,13 @@ func LoadTextFromFile(fn string) (*Text, error) {
 		return nil, fmt.Errorf("cannot read contents of file %q: %w", fn, err)
 	}
 
-	delimpos := TextMetadataDelimiter.FindIndex(fbuf)
-	if delimpos != nil {
-		err = yaml.Unmarshal(fbuf[:delimpos[1]], &T)
+	delimpos := TextMetadataDelimiter.FindAllIndex(fbuf, 2)
+	if len(delimpos) == 2 {
+		err = yaml.Unmarshal(fbuf[delimpos[0][1]:delimpos[1][1]], &T)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read metadata from %q: %w", fn, err)
 		}
-		T.raw = fbuf[delimpos[1]:]
+		T.raw = fbuf[delimpos[1][1]:]
 	} else {
 		T.raw = fbuf
 	}
@@ -185,11 +185,14 @@ func (T *Text) UpdateFile() error {
 	if err := T.file.Truncate(0); err != nil {
 		return fmt.Errorf("cannot truncate file: %w", err)
 	}
+	if _, err := io.WriteString(T.file, "---\n"); err != nil {
+		return fmt.Errorf("cannot write first metadata delimiter: %w", err)
+	}
 	if err := yaml.NewEncoder(T.file).Encode(T); err != nil {
 		return fmt.Errorf("cannot re-write metadata: %w", err)
 	}
 	if _, err := io.WriteString(T.file, "---\n"); err != nil {
-		return fmt.Errorf("cannot write metadata delimiter: %w", err)
+		return fmt.Errorf("cannot write second metadata delimiter: %w", err)
 	}
 	if _, err := T.file.Write(T.raw); err != nil {
 		return fmt.Errorf("cannot re-write body: %w", err)
