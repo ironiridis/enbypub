@@ -1,3 +1,4 @@
+---
 title: an assuredly foolish venture
 created: 2024-03-05T22:37:53.62147009-06:00
 modified: 2024-03-06T00:16:38.280565838-06:00
@@ -14,6 +15,7 @@ despite that being the *obvious* approach.
 there is certainly the possibility that just using the default parser and html renderer is good enough ... i guess
 
 next items for attention:
+* front-matter formatting requires a prefix delimiter on the very first line; we need to detect this and render it back into the source file on update
 * metadata-only changes don't work. we're only scanning the body for a change. we should also detect updated metadata; maybe see if the rendered yaml is byte-for-byte the same
   * it would be great if we could not rely on fs mtimes for this, but we might not have better alternatives.
   * we could determine a canonical rendering that does not include the checksum, render it, checksum it, and then include that in the updated file contents. seems very fragile though.
