@@ -14,8 +14,6 @@ import (
 
 	"github.com/google/uuid"
 	md "github.com/yuin/goldmark"
-	mda "github.com/yuin/goldmark/ast"
-	mdt "github.com/yuin/goldmark/text"
 	"gopkg.in/yaml.v2"
 )
 
@@ -57,7 +55,7 @@ type Text struct {
 	Feeds []string `yaml:",omitempty"`
 
 	// Body is the parsed Markdown Document of the Text
-	Body *mda.Document `yaml:"-"`
+	// Body *mda.Document `yaml:"-"`
 
 	// Checksum determines whether the body of the Text has been changed since last processed
 	Checksum *string `yaml:",omitempty"`
@@ -114,8 +112,8 @@ func LoadTextFromFile(fn string) (*Text, error) {
 		T.Created = &mt
 	}
 
-	T.Body = mda.NewDocument()
-	T.Body.AppendChild(T.Body, md.DefaultParser().Parse(mdt.NewReader(T.raw)))
+	// T.Body = mda.NewDocument()
+	// T.Body.AppendChild(T.Body, md.DefaultParser().Parse(mdt.NewReader(T.raw)))
 
 	// If the Text has been modified (or this is the first time we've seen it)
 	if !T.ChecksumMatch() {
@@ -163,7 +161,6 @@ func (T *Text) ChecksumMatch() bool {
 	hash.Write(T.raw)
 	calc := algo + ":" + hex.EncodeToString(hash.Sum([]byte{}))
 	if T.Checksum != nil && strings.EqualFold(calc, *T.Checksum) {
-		fmt.Fprintf(os.Stderr, "checksum %q matches\n", *T.Checksum)
 		return true
 	}
 	T.Checksum = &calc
@@ -171,6 +168,10 @@ func (T *Text) ChecksumMatch() bool {
 }
 
 func (T *Text) Process() error {
+	if T.Id == nil {
+		u := uuid.New()
+		T.Id = &u
+	}
 	return nil
 }
 
@@ -195,4 +196,11 @@ func (T *Text) UpdateFile() error {
 	}
 
 	return nil
+}
+
+func (T *Text) Emit(w io.Writer) {
+	err := md.Convert(T.raw, w)
+	if err != nil {
+		panic(err)
+	}
 }
