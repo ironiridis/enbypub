@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/ironiridis/enbypub/enbypub"
 )
 
 func main() {
-	T, err := enbypub.LoadTextFromFile("example.md")
+	T, err := WalkContent()
 	fmt.Fprintf(os.Stderr, "err=%v\n", err)
-	T.Emit(os.Stdout)
+	for k := range T {
+		T[k].Emit(os.Stdout)
+	}
 }

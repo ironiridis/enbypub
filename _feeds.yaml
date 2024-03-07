@@ -1,0 +1,22 @@
+public:
+  canonicalpath:
+    - textattr: style
+    - textattr: date
+    - textattr: slug
+  maximumcount: 200
+
+subscribersonly:
+  canonicalpath:
+    - string: subscribers
+    - feedattr: id
+    - textattr: style
+    - textattr: date
+    - textattr: slug
+  maximumcount: 200
+
+private:
+  canonicalpath:
+    - string: private
+    - textattr: id
+    - textattr: slug
+  maximumcount: 200

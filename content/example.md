@@ -1,12 +1,12 @@
 ---
 title: an assuredly foolish venture
 created: 2024-03-05T22:37:53.62147009-06:00
-modified: 2024-03-06T00:26:31.653357634-06:00
+modified: 2024-03-06T08:13:00.611558241-06:00
 id: 215c6975-fa0c-4e7f-b33a-bd22acaadb4f
 style: article
 feeds:
 - public
-checksum: sha1:a7071180fa13508915a1e1e587d0fc440130a789
+checksum: sha1:5ae33ffa796b19b0889b049f38d3286d3c6c045b
 ---
 it seems there likely isn't much value in parsing the markdown into an AST per se
 
@@ -20,8 +20,15 @@ next items for attention:
   * we could determine a canonical rendering that does not include the checksum, render it, checksum it, and then include that in the updated file contents. seems very fragile though.
   * keep thinking about better options, but maybe fs mtimes are just good enough
 * figure out what precisely a feed is, or if we need to abstract those behind "tags" such that a feed ingests certain tags, and then the tags define the aggregation
+  * it should be possible to have ...
+    * a text be explicitly not published to any feed
+    * a "private" feed only avilable to readers that know the uuid of the feed
+    * a "private" published text only avilable to readers that know the uuid of the text
 
 future consideration:
+* line endings should be normalized in processing
+  * probably just by converting all \r\n to \n first
+  * then converting all bare \r to \n second
 * feeds obviously need to publish somewhere
   * atom and rss should publish to a fixed asset location and travel with rendered html
   * activitypub would be cool, but maybe awkward
