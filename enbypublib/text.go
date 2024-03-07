@@ -51,8 +51,8 @@ type Text struct {
 	// Style is an optional class to apply to the document root for styling
 	Style *string `yaml:",omitempty"`
 
-	// Feeds specifies the distrubition of this Text
-	Feeds []string `yaml:",omitempty"`
+	// Tags specifies the distrubition of this Text
+	Tags []string `yaml:",omitempty"`
 
 	// Body is the parsed Markdown Document of the Text
 	// Body *mda.Document `yaml:"-"`
