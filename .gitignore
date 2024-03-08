@@ -19,4 +19,9 @@
 
 # Go workspace file
 go.work
+
+# Compiled binaries
 enbypub
+
+# Live content
+live/
