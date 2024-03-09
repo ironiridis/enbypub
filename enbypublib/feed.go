@@ -42,6 +42,10 @@ type Feed struct {
 
 	// Aggregators is a list of zero or more aggregation methods, like the Feed Index or RSS
 	Aggregators []map[string]any `yaml:",omitempty"`
+
+	// plz ignore
+	LinkTags []string
+	MetaTags []string
 }
 
 // type PublishedFeed struct {

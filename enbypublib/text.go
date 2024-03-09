@@ -1,11 +1,13 @@
 package enbypub
 
 import (
+	"bytes"
 	"crypto"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"hash"
+	"html/template"
 	"io"
 	"os"
 	"regexp"
@@ -201,9 +203,17 @@ func (T *Text) UpdateFile() error {
 	return nil
 }
 
-func (T *Text) Emit(w io.Writer) {
-	err := md.Convert(T.raw, w)
+// IsModified returns true if the Modified attribute is at least 5 minutes after the Created attribute
+func (T *Text) IsModified() bool {
+	return T.Modified.Sub(*T.Created) > time.Minute*5
+}
+
+// Emit returns an HTML fragment for the document body
+func (T *Text) Emit() template.HTML {
+	var B bytes.Buffer
+	err := md.Convert(T.raw, &B)
 	if err != nil {
 		panic(err)
 	}
+	return template.HTML(B.String())
 }
