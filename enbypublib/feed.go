@@ -48,13 +48,19 @@ type Feed struct {
 	// (not yet implemented)
 	LinkTags []string `yaml:"-"`
 	MetaTags []string `yaml:"-"`
-
-	fs *FeedStructure
 }
 
-func (F *Feed) SortByCreated() {
+// Sorts the Feed Index by the Created date of each Text, with the oldest first.
+func (F *Feed) SortByCreatedAscending() {
 	slices.SortFunc(F.Index, func(a, b *Text) int {
 		return a.Created.Compare(*b.Created)
+	})
+}
+
+// Sorts the Feed Index by the Created date of each Text, with the newest first.
+func (F *Feed) SortByCreatedDescending() {
+	slices.SortFunc(F.Index, func(a, b *Text) int {
+		return b.Created.Compare(*a.Created)
 	})
 }
 
@@ -136,6 +142,21 @@ type FeedStructure struct {
 
 	// Files is the generated final content path for each Text
 	Files map[string]*Text
+}
+
+// GetPath scans the file map for the specified uuid and returns the published Feed
+// location for that Text if found, or an empty string
+func (fs *FeedStructure) GetPath(id string) string {
+	tid, err := uuid.Parse(id)
+	if err != nil {
+		return ""
+	}
+	for p, t := range fs.Files {
+		if *t.Id == tid {
+			return p
+		}
+	}
+	return ""
 }
 
 // type PublishedFeed struct {

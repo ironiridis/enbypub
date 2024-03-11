@@ -13,6 +13,13 @@ type Publish struct {
 	Meta *enbypub.MetaT
 }
 
+type Index struct {
+	Meta          *enbypub.MetaT
+	Feed          *enbypub.Feed
+	FeedStructure *enbypub.FeedStructure
+	Index         []*enbypub.Text
+}
+
 func main() {
 	Content := must1(WalkContent())
 	Templates := must1(html.ParseFS(rootDir, args.TemplatesDir+"/*.html"))
@@ -21,7 +28,7 @@ func main() {
 
 	Meta := enbypub.Meta()
 	for _, F := range Feeds {
-		F.SortByCreated()
+		F.SortByCreatedDescending()
 		CS := must1(F.CanonicalStructure())
 		must("build directory structure", EnsurePath(CS))
 		for fn, T := range CS.Files {
@@ -33,6 +40,15 @@ func main() {
 				Meta: Meta,
 			}))
 			must("close output file", fp.Close())
+		}
+		for seg := range CS.Segments {
+			fp := must1(os.Create(args.Root + "/" + args.PublicDir + "/" + seg + "/index.html"))
+			must("render index", Templates.ExecuteTemplate(fp, "index.html", &Index{
+				Meta:          Meta,
+				Feed:          F,
+				FeedStructure: CS,
+				Index:         CS.Segments[seg],
+			}))
 		}
 	}
 }

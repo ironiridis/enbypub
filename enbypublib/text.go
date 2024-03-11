@@ -107,6 +107,13 @@ func (T *Text) Get(a Attribute) (string, error) {
 
 type Texts map[uuid.UUID]*Text
 
+func (t Texts) Get(id string) *Text {
+	if u, err := uuid.Parse(id); err == nil {
+		return t[u]
+	}
+	return nil
+}
+
 func LoadTextFromFile(fn string) (*Text, error) {
 	fstat, err := os.Stat(fn)
 	if err != nil {
