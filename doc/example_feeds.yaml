@@ -1,0 +1,65 @@
+public: # this is an example of a publicly published feed
+  tags: # texts tagged with any of these tags will be included in this feed
+  - public
+  canonicalpath: # content will be output to /article/20240306/my-great-public-article.html
+  - attr: style
+  - attr: year
+  - attr: date
+  - attr: slug
+  maximumcount: 200
+  aggregators:
+  - kind: sitemap # include published texts in a generated sitemap
+  - kind: index # produce index.html files
+    minpath: 1 # produce an index file at each canonical path starting at the first (ie /[style]/index.html)
+    maxpath: 2 # produce an index file at each canonical path ending with the second (ie /[style]/[year]/index.html)
+  - kind: atom # produce atom.xml files and link in published texts
+    minpath: 0 # produce an atom.xml file at each canononical path starting with the public root (ie /atom.xml)
+    maxpath: 1 # produce an atom.xml file at each canononical path ending with the first (ie /[style]/atom.xml)
+  - kind: rss # produce rss.xml files and link in published texts
+    minpath: 0
+    maxpath: 1
+
+subscribersonly: # this is an example of a pseudo-private feed
+  tags:
+  - subscribers
+  - paidarticles
+  canonicalpath: # content will be output to /subscribers/[some per-feed id]/article/20240306/my-saucy-take-for-subscribers.html
+  - string: subscribers
+  - attr: feedid # the id here is randomly generated but consistent for every text in the feed; anyone with this id can read everything in the feed
+  - attr: style
+  - attr: date
+  - attr: slug
+  aggregators:
+  - kind: index # produce index.html files
+    minpath: 2 # produce an index file at each canonical path starting at the second (ie /subscribers/[id]/index.html)
+    maxpath: 2 # don't produce any index files deeper than the second level
+  - kind: atom
+    minpath: 2
+    maxpath: 2
+  - kind: rss
+    minpath: 2
+    maxpath: 2
+  - kind: robotsexclude # add to generated robots.txt exclusions
+    minpath: 1 # exclude search crawling starting at the first level (ie /subscribers/* will be excluded)
+
+private: # this is an example of a feed where every text has a difficult-to-guess url
+  tags:
+  - private
+  - personal
+  - paste
+  canonicalpath: # content will be output to /private/[some per-text id]/my-private-article.html
+  - string: private
+  - attr: id # the id here is randomly generated for every text; readers viewing one private article in this feed cannot neccessarily guess the url for another
+  - attr: slug
+  aggregators:
+  - kind: robotsexclude # add to generated robots.txt exclusions
+    minpath: 1 # exclude search crawling starting at the first level (ie /private/* will be excluded)
+
+static:
+  tags:
+  - static
+  canonicalpath:
+  - string: static
+  - attr: slug
+  aggregators:
+  - kind: sitemap

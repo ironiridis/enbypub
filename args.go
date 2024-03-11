@@ -13,6 +13,8 @@ var args struct {
 	Root            string         `arg:"--root,-d" default:"." placeholder:"DIR" help:"Base folder to work in"`
 	PublicDir       string         `arg:"--pub,-p" default:"public" placeholder:"DIR" help:"Generated content is created in this folder relatve to root"`
 	ContentDir      string         `arg:"--content,-c" default:"content" placeholder:"DIR" help:"Content is generated from files in this folder relative to root"`
+	TemplatesDir    string         `arg:"--templates,-t" default:"templates" placeholder:"DIR" help:"Template HTML files are loaded from this folder relative to root"`
+	AssetsDir       string         `arg:"--assets,-a" default:"assets" placeholder:"DIR" help:"Assets in this folder relative to root are copied to the public folder into a directory named assets"`
 	TextFilePattern *regexp.Regexp `arg:"--textfilepattern" default:"\\.md$" placeholder:"REGEX" help:"A regular expression for matching Text files relative to the content dir"`
 	FeedsYaml       string         `arg:"--feeds,-f" default:"_feeds.yaml" placeholder:"FILE" help:"File relative to root where feeds are defined"`
 }

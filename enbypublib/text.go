@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -32,6 +33,9 @@ type Text struct {
 	// file is the os.File this Text was parsed from
 	file *os.File
 
+	// originalFilename is the original filename this Text was read from
+	originalFilename string
+
 	// raw is the unparsed Body of the Text
 	raw []byte
 
@@ -50,8 +54,8 @@ type Text struct {
 	// Id is the unique identifier assigned to this Text on first processing
 	Id *uuid.UUID `yaml:",omitempty"`
 
-	// Style is an optional class to apply to the document root for styling
-	Style *string `yaml:",omitempty"`
+	// Template specifies what template to use for rendering this Text
+	Template *string `yaml:",omitempty"`
 
 	// Tags specifies the distrubition of this Text
 	Tags []string `yaml:",omitempty"`
@@ -63,19 +67,45 @@ type Text struct {
 	Checksum *string `yaml:",omitempty"`
 }
 
-type TextAttribute string
+func (T *Text) Get(a Attribute) (string, error) {
+	switch a {
+	case TextAttributeSlug:
+		if T.Slug != nil {
+			return *T.Slug, nil
+		}
+	case TextAttributeId:
+		if T.Id != nil {
+			return T.Id.String(), nil
+		}
+	case TextAttributeTemplate:
+		if T.Template != nil {
+			return *T.Template, nil
+		}
+	case TextAttributeYear:
+		if T.Created != nil {
+			return (*T.Created).Format("2006"), nil
+		}
+	case TextAttributeMonth:
+		if T.Created != nil {
+			return (*T.Created).Format("01"), nil
+		}
+	case TextAttributeDay:
+		if T.Created != nil {
+			return (*T.Created).Format("02"), nil
+		}
+	case TextAttributeDayOfWeek:
+		if T.Created != nil {
+			return (*T.Created).Format("Mon"), nil
+		}
+	case TextAttributeYMD:
+		if T.Created != nil {
+			return (*T.Created).Format("20060102"), nil
+		}
+	}
+	return "", fmt.Errorf("text does not have an attribute %q", string(a))
+}
 
-const (
-	TextAttributeSlug  = TextAttribute("slug")
-	TextAttributeId    = TextAttribute("id")
-	TextAttributeStyle = TextAttribute("style")
-
-	TextAttributeYear      = TextAttribute("year")
-	TextAttributeMonth     = TextAttribute("month")
-	TextAttributeDay       = TextAttribute("day")
-	TextAttributeDayOfWeek = TextAttribute("dow")
-	TextAttributeYMD       = TextAttribute("date")
-)
+type Texts map[uuid.UUID]*Text
 
 func LoadTextFromFile(fn string) (*Text, error) {
 	fstat, err := os.Stat(fn)
@@ -93,7 +123,7 @@ func LoadTextFromFile(fn string) (*Text, error) {
 		return nil, fmt.Errorf("cannot open file %q: %w", fn, err)
 	}
 	defer fp.Close()
-	T := Text{file: fp}
+	T := Text{file: fp, originalFilename: fn}
 	fbuf, err := io.ReadAll(fp)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read contents of file %q: %w", fn, err)
@@ -118,7 +148,7 @@ func LoadTextFromFile(fn string) (*Text, error) {
 	// T.Body.AppendChild(T.Body, md.DefaultParser().Parse(mdt.NewReader(T.raw)))
 
 	// If the Text has been modified (or this is the first time we've seen it)
-	if !T.ChecksumMatch() {
+	if !T.ChecksumMatch() || (T.Modified != nil && T.Modified.Sub(mt).Abs() > time.Second*10) {
 		// Set the Modified timestamp to the filesystem modification time
 		T.Modified = &mt
 
@@ -208,12 +238,21 @@ func (T *Text) IsModified() bool {
 	return T.Modified.Sub(*T.Created) > time.Minute*5
 }
 
-// Emit returns an HTML fragment for the document body
-func (T *Text) Emit() template.HTML {
+// HTML returns an HTML fragment for the document body
+func (T *Text) HTML() template.HTML {
 	var B bytes.Buffer
 	err := md.Convert(T.raw, &B)
 	if err != nil {
 		panic(err)
 	}
 	return template.HTML(B.String())
+}
+
+func (T Text) IsTagged(tag ...string) bool {
+	for a := range tag {
+		if slices.Contains(T.Tags, tag[a]) {
+			return true
+		}
+	}
+	return false
 }

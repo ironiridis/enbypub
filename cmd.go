@@ -1,50 +1,38 @@
 package main
 
 import (
-	"fmt"
-	"io"
+	html "html/template"
 	"os"
-	"text/template"
 
 	enbypub "github.com/ironiridis/enbypub/enbypublib"
 )
 
-func main() {
-	T, err := WalkContent()
-	fmt.Fprintf(os.Stderr, "err=%v\n", err)
+type Publish struct {
+	Feed *enbypub.Feed
+	Text *enbypub.Text
+	Meta *enbypub.MetaT
+}
 
-	art, err := template.ParseFS(rootDir, "templates/*.html")
-	if err != nil {
-		panic(err)
-	}
+func main() {
+	Content := must1(WalkContent())
+	Templates := must1(html.ParseFS(rootDir, args.TemplatesDir+"/*.html"))
+	Feeds := must1(enbypub.LoadFeedsFromFile(args.FeedsYaml))
+	must("populate feeds", Feeds.Scan(Content))
 
 	Meta := enbypub.Meta()
-	type Z struct {
-		Feed *enbypub.Feed // stubbed for now
-		Text *enbypub.Text
-		Meta *enbypub.MetaT
-	}
-	for k := range T {
-		z := Z{
-			Feed: &enbypub.Feed{},
-			Text: T[k],
-			Meta: Meta,
-		}
-		var dest io.Writer
-		if T[k].Slug != nil {
-			fn := fmt.Sprintf("%s/%s/%s/%s.html", args.Root, args.PublicDir, *T[k].Style, *T[k].Slug)
-			fp, err := os.Create(fn)
-			if err != nil {
-				panic(err)
-			}
-			defer fp.Close()
-			dest = fp
-		} else {
-			dest = os.Stdout
-		}
-		err := art.Execute(dest, &z)
-		if err != nil {
-			panic(err)
+	for _, F := range Feeds {
+		F.SortByCreated()
+		CS := must1(F.CanonicalStructure())
+		must("build directory structure", EnsurePath(CS))
+		for fn, T := range CS.Files {
+			fp := must1(os.Create(args.Root + "/" + args.PublicDir + "/" + fn))
+			render := must1(F.Get(enbypub.TextAttributeTemplate, T))
+			must("render text", Templates.ExecuteTemplate(fp, render, &Publish{
+				Feed: F,
+				Text: T,
+				Meta: Meta,
+			}))
+			must("close output file", fp.Close())
 		}
 	}
 }
