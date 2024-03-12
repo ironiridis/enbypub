@@ -248,6 +248,9 @@ func (T *Text) UpdateFile() error {
 
 // IsModified returns true if the Modified attribute is at least 5 minutes after the Created attribute
 func (T *Text) IsModified() bool {
+	if T.Modified == nil {
+		return false
+	}
 	return T.Modified.Sub(*T.Created) > time.Minute*5
 }
 
