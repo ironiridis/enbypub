@@ -193,8 +193,7 @@ func LoadFeedsFromFile(fn string) (Feeds, error) {
 			mustRewrite = true
 		}
 		if feeds[k].Slug == nil {
-			slug := Sluggify(k)
-			feeds[k].Slug = &slug
+			feeds[k].Slug = Sluggify(&k)
 			mustRewrite = true
 		}
 		F[*feeds[k].Id] = feeds[k]

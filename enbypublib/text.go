@@ -211,6 +211,12 @@ func (T *Text) Process() error {
 		u := uuid.New()
 		T.Id = &u
 	}
+	if T.Title == nil {
+		T.Title = Titlenate(&T.originalFilename)
+	}
+	if T.Slug == nil {
+		T.Slug = Sluggify(T.Title)
+	}
 	return nil
 }
 
