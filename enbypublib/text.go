@@ -67,6 +67,25 @@ type Text struct {
 	Checksum *string `yaml:",omitempty"`
 }
 
+func (T *Text) String() string {
+	if T.Id != nil {
+		if T.Title != nil {
+			return *T.Title + " (" + T.Id.String() + ")"
+		}
+		if T.Slug != nil {
+			return *T.Slug + " (" + T.Id.String() + ")"
+		}
+		return T.originalFilename + " (" + T.Id.String() + ")"
+	}
+	if T.Title != nil {
+		return *T.Title
+	}
+	if T.Slug != nil {
+		return *T.Slug
+	}
+	return T.originalFilename
+}
+
 func (T *Text) Get(a Attribute) (string, error) {
 	switch a {
 	case TextAttributeSlug:

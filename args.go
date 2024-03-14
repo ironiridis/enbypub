@@ -23,7 +23,7 @@ var rootDir fs.FS
 
 func init() {
 	arg.MustParse(&args)
-	if stat, err := os.Lstat(args.Root); err != nil {
+	if stat, err := os.Stat(args.Root); err != nil {
 		panic(fmt.Errorf("cannot use %q as a root: %w", args.Root, err))
 	} else if !stat.Mode().IsDir() {
 		panic(fmt.Errorf("cannot use %q as a root: not a directory", args.Root))

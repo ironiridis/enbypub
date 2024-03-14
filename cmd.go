@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	html "html/template"
 	"os"
 
@@ -18,37 +19,28 @@ type Index struct {
 	Feed          *enbypub.Feed
 	FeedStructure *enbypub.FeedStructure
 	Index         []*enbypub.Text
+	Seg           string
 }
 
 func main() {
+	Generator := must1(enbypub.NewGenerator(args.PublicDir))
 	Content := must1(WalkContent())
-	Templates := must1(html.ParseFS(rootDir, args.TemplatesDir+"/*.html"))
-	Feeds := must1(enbypub.LoadFeedsFromFile(args.FeedsYaml))
+	Generator.Templates = must1(html.ParseFS(rootDir, args.TemplatesDir+"/*.html"))
+	Feeds := must1(enbypub.LoadFeedsFromFile(args.FeedsYaml, Generator))
 	must("populate feeds", Feeds.Scan(Content))
 
-	Meta := enbypub.Meta()
 	for _, F := range Feeds {
 		F.SortByCreatedDescending()
 		CS := must1(F.CanonicalStructure())
 		must("build directory structure", EnsurePath(CS))
 		for fn, T := range CS.Files {
-			fp := must1(os.Create(args.Root + "/" + args.PublicDir + "/" + fn))
-			render := must1(F.Get(enbypub.TextAttributeTemplate, T))
-			must("render text", Templates.ExecuteTemplate(fp, render, &Publish{
-				Feed: F,
-				Text: T,
-				Meta: Meta,
-			}))
-			must("close output file", fp.Close())
+			must("generate output file", Generator.Template(
+				must1(F.Get(enbypub.TextAttributeTemplate, T)),
+				&Publish{Feed: F, Text: T, Meta: enbypub.Meta()},
+				T.Modified,
+				fn))
 		}
-		for seg := range CS.Segments {
-			fp := must1(os.Create(args.Root + "/" + args.PublicDir + "/" + seg + "/index.html"))
-			must("render index", Templates.ExecuteTemplate(fp, "index.html", &Index{
-				Meta:          Meta,
-				Feed:          F,
-				FeedStructure: CS,
-				Index:         CS.Segments[seg],
-			}))
-		}
+		F.Close()
 	}
+	fmt.Fprintf(os.Stdout, "generated files:\n%+v\n", Generator.Manifest())
 }

@@ -8,3 +8,7 @@ func must1[T any](v T, err error) T {
 	}
 	return v
 }
+
+func strptr(s string) *string {
+	return &s
+}

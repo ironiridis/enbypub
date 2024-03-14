@@ -25,7 +25,13 @@ type MetaT struct {
 	MainPackage string
 }
 
+var metaCached *MetaT
+
 func Meta() (M *MetaT) {
+	if metaCached != nil {
+		M = metaCached
+		return
+	}
 	M = &MetaT{
 		Package:     "github.com/ironiridis/enbypub/enbypublib",
 		MainPackage: "github.com/ironiridis/enbypub",
@@ -61,6 +67,7 @@ func Meta() (M *MetaT) {
 			}
 		}
 	}
+	metaCached = M
 	return
 }
 
