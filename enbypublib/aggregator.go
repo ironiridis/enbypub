@@ -40,6 +40,8 @@ func (ga *genericAggregator) specialize() (a Aggregator, err error) {
 	switch ga.Kind {
 	case "index":
 		a = &IndexAggregator{Kind: ga.Kind}
+	case "rss":
+		a = &RSSAggregator{Kind: ga.Kind}
 	default:
 		err = fmt.Errorf("cannot specialize into an unknown aggregator kind %q", ga.Kind)
 		return
@@ -56,12 +58,6 @@ func (ga *genericAggregator) specialize() (a Aggregator, err error) {
 		return
 	}
 	return
-}
-
-// RSSAggregator provides an RSS feed XML document intended for consumption with an RSS reader.
-type RSSAggregator struct {
-	MinPath *uint `yaml:",omitempty"`
-	MaxPath *uint `yaml:",omitempty"`
 }
 
 // AtomAggregator provides an Atom feed XML document intended for consumption with an Atom feed reader.
