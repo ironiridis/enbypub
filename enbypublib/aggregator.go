@@ -40,6 +40,8 @@ func (ga *genericAggregator) specialize() (a Aggregator, err error) {
 	switch ga.Kind {
 	case "index":
 		a = &IndexAggregator{Kind: ga.Kind}
+	case "robotsexclude":
+		a = &RobotsExcludeAggregator{Kind: ga.Kind}
 	case "rss":
 		a = &RSSAggregator{Kind: ga.Kind}
 	default:
@@ -69,11 +71,6 @@ type AtomAggregator struct {
 // SitemapAggregator generates a sitemap XML document intended for consumption by search engines. It also
 // adds a pointer to this generated sitemap file in robots.txt.
 type SitemapAggregator struct {
-}
-
-// RobotsExcludeAggregator adds the path component to an exclusion directive in robots.txt.
-type RobotsExcludeAggregator struct {
-	MinPath *uint `yaml:",omitempty"`
 }
 
 // SearchAggregator produces a basic search index of keywords to enable a client-side search.

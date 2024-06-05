@@ -10,12 +10,12 @@ import (
 
 // File holds an open os.File pointer representing a pending piece of written content.
 type File struct {
-	g      *Generator
-	err    error
-	path   string
-	ospath string
-	fp     *os.File
-
+	g           *Generator
+	err         error
+	path        string
+	ospath      string
+	fp          *os.File
+	opens       uint
 	contentType *string
 	modtime     *time.Time
 }
@@ -63,6 +63,7 @@ func (f *File) From(path string) error {
 		f.err = fmt.Errorf("cannot create %q: cannot open %q to read from: %w", f.path, path, err)
 		return f.err
 	}
+	defer fp.Close()
 	io.Copy(f, fp)
 	return f.Close()
 }
@@ -153,6 +154,10 @@ func (f *File) Close() error {
 	}
 	if f.fp == nil { // f is already closed; return the last error set, if any
 		return f.err
+	}
+	f.opens--
+	if f.opens > 0 {
+		return nil
 	}
 	f.err, f.fp = f.fp.Close(), nil // fp must always be set to nil
 	if f.err != nil {

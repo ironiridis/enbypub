@@ -42,11 +42,11 @@ func (g *Generator) Create(path ...string) (f *File) {
 
 	// Does this Generator already have a *File at that path?
 	if f = g.Files[p]; f != nil {
+		f.opens++
 		return
 	}
 
-	f = &File{g: g, path: p, ospath: g.OSPath(p)}
-	g.Files[p] = f
+	f = &File{g: g, path: p, ospath: g.OSPath(p), opens: 1}
 
 	// Does path have an extension?
 	if i := strings.LastIndexByte(p, '.'); i >= 0 {
@@ -61,6 +61,7 @@ func (g *Generator) Create(path ...string) (f *File) {
 	} else {
 		f.fp = fp
 	}
+	g.Files[p] = f
 	return
 }
 
