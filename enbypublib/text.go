@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"hash"
 	"html/template"
@@ -30,9 +29,6 @@ var TextUnlikelyCreationDate = must1(time.Parse(time.RFC3339, "1993-08-31T23:59:
 var TextMetadataDelimiter = regexp.MustCompile(`(?m:^---+[\r\n]+)`)
 
 type Text struct {
-	// file is the os.File this Text was parsed from
-	file *os.File
-
 	// originalFilename is the original filename this Text was read from
 	originalFilename string
 
@@ -141,16 +137,12 @@ func LoadTextFromFile(fn string) (*Text, error) {
 
 	mt := fstat.ModTime()
 	if mt.Before(TextUnlikelyCreationDate) {
+		fmt.Fprintf(os.Stderr, "warning: %q has unlikely file modification time %s\n", fn, mt.String())
 		mt = time.Now()
 	}
 
-	fp, err := os.OpenFile(fn, os.O_RDWR, 0o600)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open file %q: %w", fn, err)
-	}
-	defer fp.Close()
-	T := Text{file: fp, originalFilename: fn}
-	fbuf, err := io.ReadAll(fp)
+	T := Text{originalFilename: fn}
+	fbuf, err := os.ReadFile(fn)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read contents of file %q: %w", fn, err)
 	}
@@ -187,8 +179,12 @@ func LoadTextFromFile(fn string) (*Text, error) {
 			return nil, fmt.Errorf("cannot process %q: %w", fn, err)
 		}
 
-		if err := T.UpdateFile(); err != nil {
+		if err := T.PutFile(); err != nil {
 			return nil, fmt.Errorf("cannot update %q: %w", fn, err)
+		}
+
+		if err := T.SetFSModificationTime(); err != nil {
+			return nil, fmt.Errorf("cannot update %q mtime: %w", fn, err)
 		}
 	}
 
@@ -239,29 +235,37 @@ func (T *Text) Process() error {
 	return nil
 }
 
-func (T *Text) UpdateFile() error {
-	if T.file == nil {
-		return errors.New("file handle is unexpectedly nil")
+func (T *Text) PutFile() error {
+	//TODO: replace all of this with os.WriteFile
+
+	fp, err := os.OpenFile(T.originalFilename, os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return fmt.Errorf("unable to re-open %q to write: %w", T.originalFilename, err)
 	}
-	if _, err := T.file.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("cannot reset to start of file: %w", err)
-	}
-	if err := T.file.Truncate(0); err != nil {
-		return fmt.Errorf("cannot truncate file: %w", err)
-	}
-	if _, err := io.WriteString(T.file, "---\n"); err != nil {
+	defer fp.Close()
+
+	if _, err := io.WriteString(fp, "---\n"); err != nil {
 		return fmt.Errorf("cannot write first metadata delimiter: %w", err)
 	}
-	if err := yaml.NewEncoder(T.file).Encode(T); err != nil {
+	if err := yaml.NewEncoder(fp).Encode(T); err != nil {
 		return fmt.Errorf("cannot re-write metadata: %w", err)
 	}
-	if _, err := io.WriteString(T.file, "---\n"); err != nil {
+	if _, err := io.WriteString(fp, "---\n"); err != nil {
 		return fmt.Errorf("cannot write second metadata delimiter: %w", err)
 	}
-	if _, err := T.file.Write(T.raw); err != nil {
+	if _, err := fp.Write(T.raw); err != nil {
 		return fmt.Errorf("cannot re-write body: %w", err)
 	}
 
+	return nil
+}
+
+func (T *Text) SetFSModificationTime() error {
+	if T.Modified != nil {
+		if err := os.Chtimes(T.originalFilename, time.Time{}, *T.Modified); err != nil {
+			return fmt.Errorf("failed updating modification time of %q: %w", T.originalFilename, err)
+		}
+	}
 	return nil
 }
 
